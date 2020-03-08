@@ -8,8 +8,8 @@
 // Create a new instance of the AccelStepper class:
 
 //enable pin dvr8825
-#define step0 7
-#define step1 8
+#define upper_en 7
+#define roller_en 8
 
 // Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver:
 #define dirPin1 4
@@ -18,16 +18,21 @@
 // Create a new instance of the AccelStepper class:
 
 
-// digital pin 3 has a pushbutton attached to it. Give it a name:
+// set limit switch
+int maskButton = 13;
 int endButton = 12;
-int pushButton = 9;
+int startButton = 11;
+
+//set pushbutton
+int roundButton = 9;
+int triangle = 10;
+
 int count = 0;
 int count_1 = 0;
 
+AccelStepper upper = AccelStepper(motorInterfaceType1, stepPin1, dirPin1); // upper and down
+AccelStepper roller = AccelStepper(motorInterfaceType, stepPin, dirPin); // roller
 
-AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
-
-AccelStepper stepper1 = AccelStepper(motorInterfaceType1, stepPin1, dirPin1);
 
 void run_step(){
   /*if(count_1==0){
@@ -37,8 +42,9 @@ void run_step(){
   Serial.println("run");
   count_1++;
   }*/
-  digitalWrite(step0,LOW);
-  digitalWrite(step1,HIGH);
+  //upper up infi
+  digitalWrite(upper_en,LOW);
+  digitalWrite(roller_en,HIGH);
     digitalWrite(dirPin, HIGH);
     digitalWrite(stepPin, HIGH);
     delayMicroseconds(2000);
@@ -48,23 +54,29 @@ void run_step(){
 }
 
 void back_step(){
-  digitalWrite(step0,LOW);
-  digitalWrite(step1,LOW);
-  stepper.setCurrentPosition(0);
-  stepper1.setCurrentPosition(0);
+  digitalWrite(upper_en,LOW);
+  digitalWrite(roller_en,HIGH);
+  upper.setCurrentPosition(0);
+  roller.setCurrentPosition(0);
   Serial.println("back");
   // Run the motor forward at 400 steps/second until the motor reaches 600 steps (3 revolutions):
-  while(stepper.currentPosition() != -800)
+  while(upper.currentPosition() != -800)
   {
-    stepper.setSpeed(-600);
-    stepper.runSpeed();
+    upper.setSpeed(-600);
+    upper.runSpeed();
   }
 
-  while(stepper1.currentPosition() != 800)
+  digitalWrite(upper_en,HIGH);
+  digitalWrite(roller_en,LOW);
+
+  while(roller.currentPosition() != 800)
   {
-    stepper1.setSpeed(600);
-    stepper1.runSpeed();
+    roller.setSpeed(600);
+    roller.runSpeed();
   }
+
+  digitalWrite(upper_en,HIGH);
+  digitalWrite(roller_en,HIGH);
   count=0;
   count_1=0;
 }
@@ -73,8 +85,8 @@ void stop_step(){
   /*stepper.setSpeed(0); 
   stepper1.setSpeed(0); */
 
-  digitalWrite(step0,HIGH);
-  digitalWrite(step1,HIGH);
+  digitalWrite(upper_en,HIGH);
+  digitalWrite(roller_en,HIGH);
 }
 
 
@@ -84,28 +96,30 @@ void setup() {
   pinMode(dirPin, OUTPUT);
 
 
+  //set mode
+  pinMode(maskButton, INPUT_PULLUP);
   
-  pinMode(endButton, INPUT_PULLUP);
-  pinMode(pushButton, INPUT_PULLUP);
+  pinMode(roundButton, INPUT_PULLUP);
+  
   // Set the maximum speed in steps per second:
-  stepper.setMaxSpeed(1000);
+  upper.setMaxSpeed(1000);
   Serial.begin(9600);
 
-  pinMode(step0, OUTPUT);
-  pinMode(step1, OUTPUT);
+  pinMode(upper_en, OUTPUT);
+  pinMode(roller_en, OUTPUT);
   
-  stepper.setMaxSpeed(1000);
-  stepper1.setMaxSpeed(1000);
+  upper.setMaxSpeed(1000);
+  roller.setMaxSpeed(1000);
   /*stepper.setSpeed(0);
   stepper1.setSpeed(0);
   stepper.runSpeed();
   stepper1.runSpeed();*/
-  digitalWrite(step0,HIGH);
-  digitalWrite(step1,HIGH);
+  digitalWrite(upper_en,HIGH);
+  digitalWrite(roller_en,HIGH);
 }
 void loop() {
-  int state = digitalRead(endButton);
-  int buttonState = digitalRead(pushButton);
+  int state = digitalRead(maskButton);
+  int buttonState = digitalRead(roundButton);
   Serial.println(count);
     
 
