@@ -1,6 +1,11 @@
 /*Example sketch to control a stepper motor with DRV8825 stepper motor driver, AccelStepper library and Arduino: continuous rotation. More info: https://www.makerguides.com */
 // Include the AccelStepper library:
 #include <AccelStepper.h>
+// Include the timer
+#include <SimpleTimer.h>
+SimpleTimer timer;
+
+//--------------------------step---------------------------
 // Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver:
 #define dirPin 6
 #define stepPin 5
@@ -8,7 +13,7 @@
 // Create a new instance of the AccelStepper class:
 
 //enable pin dvr8825
-#define upper_en 7
+#define upper_en 13//no 7 is somting wrong...
 #define roller_en 8
 
 // Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver:
@@ -18,91 +23,64 @@
 // Create a new instance of the AccelStepper class:
 
 
-// set limit switch
-int maskButton = 13;
-int endButton = 12;
-int startButton = 11;
-
-//set pushbutton
-int roundButton = 9;
-int triangle = 10;
-
-int count = 0;
-int count_1 = 0;
 
 AccelStepper upper = AccelStepper(motorInterfaceType1, stepPin1, dirPin1); // upper and down
 AccelStepper roller = AccelStepper(motorInterfaceType, stepPin, dirPin); // roller
 
+//--------------------------------------------------------------------------------------------
 
-void run_step(){
-  /*if(count_1==0){
-    stepper.runSpeed();
-    // Set the speed in steps per second:
-  // Step the motor with a constant speed as set by setSpeed():
-  Serial.println("run");
-  count_1++;
-  }*/
-  //upper up infi
-  digitalWrite(upper_en,LOW);
-  digitalWrite(roller_en,HIGH);
-    digitalWrite(dirPin, HIGH);
-    digitalWrite(stepPin, HIGH);
-    delayMicroseconds(2000);
-    digitalWrite(stepPin, LOW);
-    delayMicroseconds(2000);
 
-}
+// set limit switch
+int maskButton = A0;
+int endButton = A1;
+int startButton = A2;
+int restartButton = A3;
 
-void back_step(){
-  digitalWrite(upper_en,LOW);
-  digitalWrite(roller_en,HIGH);
-  upper.setCurrentPosition(0);
-  roller.setCurrentPosition(0);
-  Serial.println("back");
-  // Run the motor forward at 400 steps/second until the motor reaches 600 steps (3 revolutions):
-  while(upper.currentPosition() != -800)
-  {
-    upper.setSpeed(-600);
-    upper.runSpeed();
-  }
+//--------set pushbutton---------
+boolean ledOn = false;
+int roundButton = 9;
+int roundLed = 11;
 
-  digitalWrite(upper_en,HIGH);
-  digitalWrite(roller_en,LOW);
 
-  while(roller.currentPosition() != 800)
-  {
-    roller.setSpeed(600);
-    roller.runSpeed();
-  }
+int triangle = 10;
+int triangleLed = 12;
+//--------button led---------
 
-  digitalWrite(upper_en,HIGH);
-  digitalWrite(roller_en,HIGH);
-  count=0;
-  count_1=0;
-}
+int count = 0;
+int count_home = 0;
+int count_left = 0;
+int count_reset = 0;
 
-void stop_step(){
-  /*stepper.setSpeed(0); 
-  stepper1.setSpeed(0); */
-
-  digitalWrite(upper_en,HIGH);
-  digitalWrite(roller_en,HIGH);
-}
-
+int round_button_count = 0;
 
 void setup() {
+//timer_set 500 = 0.5 sec 
+  timer.setInterval(500, toggle);
 ///test
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
 
 
   //set mode
-  pinMode(maskButton, INPUT_PULLUP);
+  /*
+   * int maskButton = A0;
+   * int endButton = A1;
+   * int startButton = A2;
+   * int restartButton = A3;
+   */
+  pinMode(maskButton, INPUT_PULLUP); //mask 
+  pinMode(endButton, INPUT_PULLUP); // mask_rest
+  pinMode(startButton, INPUT_PULLUP);// upper home
+  pinMode(restartButton, INPUT_PULLUP);// reset switch
+  
   
   pinMode(roundButton, INPUT_PULLUP);
+  pinMode(roundLed, OUTPUT);
+
+  pinMode(triangle, INPUT_PULLUP);
+  pinMode(triangleLed, OUTPUT);
   
   // Set the maximum speed in steps per second:
-  upper.setMaxSpeed(1000);
   Serial.begin(9600);
 
   pinMode(upper_en, OUTPUT);
@@ -117,28 +95,115 @@ void setup() {
   digitalWrite(upper_en,HIGH);
   digitalWrite(roller_en,HIGH);
 }
+
+void toggle(){
+if(ledOn == true){
+digitalWrite(roundLed, LOW);
+}else{
+digitalWrite(roundLed, HIGH);
+}
+ledOn = !ledOn;
+}
+
+
 void loop() {
-  int state = digitalRead(maskButton);
+  //limit
+  int mask = digitalRead(maskButton);
+  int left = digitalRead(endButton);
+  int up_home = digitalRead(startButton);
+  int reset = digitalRead(restartButton);
+
+  //button
   int buttonState = digitalRead(roundButton);
-  Serial.println(count);
-    
+  //Serial.println(up_home);
 
-  if(count == 0){
-   if(buttonState == 0){
-   count++;
-  } 
-  }
-  
-
-  if(count == 1){
-  //Step the motor with a constant speed as set by setSpeed():
-    run_step();
-    if(state == 0){
+//check -- input serial---------
+  if (Serial.available() > 0) { //
+    char ch = Serial.read(); //1byte
+    //Serial.print("test_get : "); //1byte
+    //Serial.println(ch);
+    if(ch == 'a'){//mask supply action
+      Serial.println("plz push the round button");
+      round_button_count++;
+    }
+    else if(ch == 'r'){//run test steep motor
+      Serial.println("start run test motor");
       back_step();
     }
-  }else{
-    stop_step();
+  }
+  if(round_button_count == 1){
+    timer.run();
+    if(buttonState == 1){
+      Serial.println("push the round button");
+      round_button_count = 0;
+      digitalWrite(roundLed, LOW);
+      count++;
+    }
+  }
+  if(count == 1){
+  //Step the motor with a constant speed as set by setSpeed():
+  Serial.println("runstep");
+  digitalWrite(upper_en,LOW);
+  digitalWrite(roller_en,HIGH);
+  digitalWrite(dirPin1, HIGH);//set dir
+  run_step();
+  count++;  
+  }
+  if(count == 2){
+    run_step();
+    if(mask == 0){
+      back_step();
+      count_home++;
+      Serial.println(count_home);
+      digitalWrite(upper_en,LOW);
+      digitalWrite(roller_en,HIGH);
+      digitalWrite(dirPin1, LOW);//set dir
+      }
+     else if(left == 0){
+      //Serial.println("no left mask");
+      digitalWrite(upper_en,LOW);
+      digitalWrite(roller_en,HIGH);
+      digitalWrite(dirPin1, LOW);//set dir
+      run_step();
+      count_home=1;
+      count_left=1;
+     }
+     
+     if(count_home == 1){
+      if(count_left == 1){
+        run_step();
+        if(up_home == 0){
+        stop_step();
+        Serial.println("home");
+        //Serial.println("plz refill mask and push the reset button");
+        count_reset = 1;
+        }
+      }
+      }
+  }
+  if(count == 0){
+   if(count_home == 1){
+    run_step();
+    if(up_home == 0){
+      stop_step();
+      Serial.println("home");
+    }
+   }
+   if(count_reset == 1){
+    Serial.println("plz refill mask and push the reset button");
+    count_reset = 2;
+    }
+    else if(count_reset == 2){
+      if(reset == 0){
+        Serial.println("reset_check_supply_the_mask");
+        count_reset = 0;
+        count = 1;
+      }
+    }
   }
 
+  
+  
+//------------------------------------
   
 }
