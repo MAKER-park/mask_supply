@@ -3,7 +3,10 @@
 #include <AccelStepper.h>
 // Include the timer
 #include <SimpleTimer.h>
+
+
 SimpleTimer timer;
+SimpleTimer timer1;
 
 //--------------------------step---------------------------
 // Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver:
@@ -53,9 +56,12 @@ int count_reset = 0;
 
 int round_button_count = 0;
 
+int test = 0;
+
 void setup() {
 //timer_set 500 = 0.5 sec 
   timer.setInterval(500, toggle);
+  timer1.setInterval(1000, toggle1);
 ///test
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
@@ -96,6 +102,7 @@ void setup() {
   digitalWrite(roller_en,HIGH);
 }
 
+//-----------------------------------timer-------------------------
 void toggle(){
 if(ledOn == true){
 digitalWrite(roundLed, LOW);
@@ -104,6 +111,20 @@ digitalWrite(roundLed, HIGH);
 }
 ledOn = !ledOn;
 }
+//------------------------------------------------------
+
+
+//---------------------------timer1-------------------------
+void toggle1(){
+if(ledOn == true){
+digitalWrite(triangleLed, LOW);
+}else{
+digitalWrite(triangleLed, HIGH);
+}
+ledOn = !ledOn;
+}
+
+//--------------------------timer------------------------------
 
 
 void loop() {
@@ -114,7 +135,8 @@ void loop() {
   int reset = digitalRead(restartButton);
 
   //button
-  int buttonState = digitalRead(roundButton);
+  int buttonState = digitalRead(roundButton); //round
+  int buttonState1 = digitalRead(triangle);//triangle
   //Serial.println(up_home);
 
 //check -- input serial---------
@@ -130,7 +152,35 @@ void loop() {
       Serial.println("start run test motor");
       back_step();
     }
+
+    else if(ch == '1'){//test the button
+      Serial.println("plz push the round button");
+      test = 1;
+    }
+
+    else if(ch == '2'){
+      Serial.println("plz push the triangle button");
+      test = 2;
+    }
   }
+
+  if(test == 1){
+    timer.run();
+    if(buttonState == 1){
+      Serial.println("push the round button");
+      digitalWrite(roundLed, LOW);
+      test = 0;
+      }
+  }
+  else if(test ==2){
+    timer1.run();
+      if(buttonState1 == 1){
+      Serial.println("push the triangle button");
+      digitalWrite(triangleLed, LOW);
+      test = 0;
+      }
+  }
+  
   if(round_button_count == 1){
     timer.run();
     if(buttonState == 1){
