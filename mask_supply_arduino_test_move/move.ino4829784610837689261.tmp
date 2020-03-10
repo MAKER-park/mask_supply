@@ -22,7 +22,7 @@ void back_step(){//supply the mask action
   roller.setCurrentPosition(0);
   Serial.println("back");
   // Run the motor forward at 400 steps/second until the motor reaches 600 steps (3 revolutions):
-  while(upper.currentPosition() != 400)
+  while(upper.currentPosition() != 800)
   {
     upper.setSpeed(600);
     upper.runSpeed();
@@ -31,9 +31,9 @@ void back_step(){//supply the mask action
   digitalWrite(upper_en,HIGH);
   digitalWrite(roller_en,LOW);
 
-  while(roller.currentPosition() != 800)
+  while(roller.currentPosition() != -800)
   {
-    roller.setSpeed(600);
+    roller.setSpeed(-600);
     roller.runSpeed();
   }
 

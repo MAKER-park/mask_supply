@@ -1,3 +1,4 @@
+
 /*Example sketch to control a stepper motor with DRV8825 stepper motor driver, AccelStepper library and Arduino: continuous rotation. More info: https://www.makerguides.com */
 // Include the AccelStepper library:
 #include <AccelStepper.h>
@@ -195,7 +196,7 @@ void loop() {
   Serial.println("runstep");
   digitalWrite(upper_en,LOW);
   digitalWrite(roller_en,HIGH);
-  digitalWrite(dirPin1, HIGH);//set dir
+  digitalWrite(dirPin1, LOW);//set dir
   run_step();
   count++;  
   }
@@ -207,13 +208,13 @@ void loop() {
       Serial.println(count_home);
       digitalWrite(upper_en,LOW);
       digitalWrite(roller_en,HIGH);
-      digitalWrite(dirPin1, LOW);//set dir
+      digitalWrite(dirPin1, HIGH);//set dir
       }
      else if(left == 0){
       //Serial.println("no left mask");
       digitalWrite(upper_en,LOW);
       digitalWrite(roller_en,HIGH);
-      digitalWrite(dirPin1, LOW);//set dir
+      digitalWrite(dirPin1, HIGH);//set dir
       run_step();
       count_home=1;
       count_left=1;
